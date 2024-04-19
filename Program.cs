@@ -23,18 +23,18 @@ app.Use(async (context, next) =>
 
 var todos = new List<Todo>();
 
-app.MapGet("/todos", () => todos);
-app.MapGet("/todos/{id}", Results<Ok<Todo>, NotFound> (int id) =>
+app.MapGet("/todos", (ITaskService service) => service.GetTodos());
+app.MapGet("/todos/{id}", Results<Ok<Todo>, NotFound> (int id, ITaskService service) =>
 {
-    var targetTodo = todos.SingleOrDefault(t => id == t.Id);
+    var targetTodo = service.GetTodoById(id);
     return targetTodo is null
         ? TypedResults.NotFound()
         : TypedResults.Ok(targetTodo);
 });
 
-app.MapPost("/todos", (Todo task) =>
+app.MapPost("/todos", (Todo task, ITaskService service) =>
 {
-    todos.Add(task);
+    service.AddTodo(task);
     return TypedResults.Created("/todos/{id}", task);
 }).AddEndpointFilter(async (context, next) =>
 {
@@ -58,13 +58,11 @@ app.MapPost("/todos", (Todo task) =>
 
 });
 
-app.MapDelete("/todos/{id}", (int id) =>
+app.MapDelete("/todos/{id}", (int id, ITaskService service) =>
 {
-    todos.RemoveAll(t => id == t.Id);
+    service.DeleteTodoById(id);
     return TypedResults.NoContent();
 });
-
-
 
 
 app.Run();
